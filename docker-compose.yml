@@ -1,0 +1,44 @@
+version: '3'
+services:
+  local-nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: local-nginx-proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+  local-mysql-57:
+    container_name: local-mysql-57
+    image: local-mysql-57
+    build:
+      context: ./mysql57
+      args:
+        MYSQL_VERSION: ${MYSQL_VERSION}
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_PASSWORD: ${MYSQL_USER_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER_NAME}
+      TZ: ${WORKSPACE_TIMEZONE}
+    volumes:
+      - ${MYSQL_HOST_DATA}/${MYSQL_VERSION}:/var/lib/mysql
+    ports:
+      - "0.0.0.0:3306:3306"
+    command: [ 'mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci' ]
+
+  local-redis:
+      container_name: local-redis
+      image: 'redis:${REDIS_VERSION}'
+      command: redis-server --requirepass ${REDIS_PASSWORD}
+      volumes:
+        - ${REDIS_HOST_DATA}/${REDIS_VERSION}:/data
+      ports:
+        - ${REDIS_PORT}:${REDIS_PORT}
+
+networks:
+  default:
+    external:
+      name: ${NETWORK_NAME}
